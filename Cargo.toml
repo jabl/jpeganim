@@ -1,0 +1,16 @@
+[package]
+name = "jpeganim"
+version = "0.1.0"
+authors = ["Janne Blomqvist <blomqvist.janne@gmail.com>"]
+
+[dependencies]
+find_folder = "^0.3.0"
+image = "^0.12.1"
+rand = "^0.3.15"
+# Eventually use clap.rs for command-line option handling
+# or argparse?
+
+[dependencies.conrod]
+version = "^0.48.0"
+default-features = false
+features = ["glutin", "glium"]
