@@ -44,18 +44,18 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
         let font_path = assets.join("fonts/NotoSans/NotoSans-Regular.ttf");
         ui.fonts.insert_from_file(font_path).unwrap();
 
-        // Load the Rust logo from our assets folder to use as an example image.
-        fn load_rust_logo(display: &glium::Display) -> glium::texture::Texture2d {
-            let assets = find_folder::Search::ParentsThenKids(3, 3).for_folder("assets").unwrap();
-            let path = assets.join("images/rust.png");
-            let rgba_image = image::open(&std::path::Path::new(&path)).unwrap().to_rgba();
+        let imgs = imgloader::img_load(std::path::Path::new("."));
+
+        // Convert an image to a texture, upload it to GPU
+        fn img2tex(display: &glium::Display, rgba_image: &image::RgbaImage) -> glium::texture::Texture2d {
             let image_dimensions = rgba_image.dimensions();
-            let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(rgba_image.into_raw(), image_dimensions);
+            let mut r = rgba_image.clone();
+            let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(r.into_raw(), image_dimensions);
             let texture = glium::texture::Texture2d::new(display, raw_image).unwrap();
             texture
         }
 
-        let image_map = support::image_map(&ids, load_rust_logo(&display));
+        //let image_map = support::image_map(&ids, load_rust_logo(&display));
 
         // A type used for converting `conrod::render::Primitives` into `Command`s that can be used
         // for drawing to the glium `Surface`.
@@ -115,6 +115,9 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
                 let mut ui = ui.set_widgets();
                 support::gui(&mut ui, &ids, &mut app);
             }
+
+            // Load the Image to display this frame
+            let image_map = support::image_map(&ids, img2tex(&display, &imgs[0]));
 
             // Draw the `Ui`.
             if let Some(primitives) = ui.draw_if_changed() {
