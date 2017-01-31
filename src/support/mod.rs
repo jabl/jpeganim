@@ -16,6 +16,7 @@ extern crate rand;
 
 use conrod;
 use std;
+use conrod::backend::glium::glium;
 
 pub const WIN_W: u32 = 600;
 pub const WIN_H: u32 = 420;
@@ -26,17 +27,19 @@ pub struct DemoApp {
     ball_xy: conrod::Point,
     ball_color: conrod::Color,
     sine_frequency: f32,
+    rust_logo: conrod::image::Id,
 }
 
 
 impl DemoApp {
 
     /// Simple constructor for the `DemoApp`.
-    pub fn new() -> Self {
+    pub fn new(rust_logo: conrod::image::Id) -> Self {
         DemoApp {
             ball_xy: [0.0, 0.0],
             ball_color: conrod::color::WHITE,
             sine_frequency: 1.0,
+            rust_logo: rust_logo,
         }
     }
 
@@ -45,11 +48,12 @@ impl DemoApp {
 
 /// A set of reasonable stylistic defaults that works for the `gui` below.
 pub fn theme() -> conrod::Theme {
+    use conrod::position::{Align, Direction, Padding, Position, Relative};
     conrod::Theme {
         name: "Demo Theme".to_string(),
-        padding: conrod::Padding::none(),
-        x_position: conrod::Position::Align(conrod::Align::Start, None),
-        y_position: conrod::Position::Direction(conrod::Direction::Backwards, 20.0, None),
+        padding: Padding::none(),
+        x_position: Position::Relative(Relative::Align(Align::Start), None),
+        y_position: Position::Relative(Relative::Direction(Direction::Backwards, 20.0), None),
         background_color: conrod::color::DARK_CHARCOAL,
         shape_color: conrod::color::LIGHT_CHARCOAL,
         border_color: conrod::color::BLACK,
@@ -62,14 +66,6 @@ pub fn theme() -> conrod::Theme {
         widget_styling: std::collections::HashMap::new(),
         mouse_drag_threshold: 0.0,
         double_click_threshold: std::time::Duration::from_millis(500),
-    }
-}
-
-
-/// Create an image map that maps the `ids.rust_logo` to the `rust_logo` image.
-pub fn image_map<T>(ids: &Ids, rust_logo: T) -> conrod::image::Map<T> {
-    image_map! {
-        (ids.rust_logo, rust_logo)
     }
 }
 
@@ -160,7 +156,7 @@ pub fn gui(ui: &mut conrod::UiCell, ids: &Ids, app: &mut DemoApp) {
         .padded_w_of(ids.canvas, MARGIN)
         .down(60.0)
         .align_middle_x_of(ids.canvas)
-        .align_text_middle()
+        .center_justify()
         .line_spacing(5.0)
         .set(ids.introduction, ui);
 
@@ -242,7 +238,7 @@ pub fn gui(ui: &mut conrod::UiCell, ids: &Ids, app: &mut DemoApp) {
         .set(ids.image_title, ui);
 
     const LOGO_SIDE: conrod::Scalar = 144.0;
-    widget::Image::new()
+    widget::Image::new(app.rust_logo)
         .w_h(LOGO_SIDE, LOGO_SIDE)
         .down(60.0)
         .align_middle_x_of(ids.canvas)
@@ -356,5 +352,58 @@ pub fn gui(ui: &mut conrod::UiCell, ids: &Ids, app: &mut DemoApp) {
 
 
     widget::Scrollbar::y_axis(ids.canvas).auto_hide(true).set(ids.canvas_scrollbar, ui);
+
+}
+
+
+pub struct EventLoop {
+    ui_needs_update: bool,
+    last_update: std::time::Instant,
+}
+
+//#[cfg(feature="glium")]
+impl EventLoop {
+
+    pub fn new() -> Self {
+        EventLoop {
+            last_update: std::time::Instant::now(),
+            ui_needs_update: false,
+        }
+    }
+
+    /// Produce an iterator yielding all available events.
+    pub fn next(&mut self, display: &glium::Display) -> Vec<glium::glutin::Event> {
+        // We don't want to loop any faster than 60 FPS, so wait until it has been at least 16ms
+        // since the last yield.
+        let last_update = self.last_update;
+        let sixteen_ms = std::time::Duration::from_millis(16);
+        let duration_since_last_update = std::time::Instant::now().duration_since(last_update);
+        if duration_since_last_update < sixteen_ms {
+            std::thread::sleep(sixteen_ms - duration_since_last_update);
+        }
+
+        // Collect all pending events.
+        let mut events = Vec::new();
+        events.extend(display.poll_events());
+
+        // If there are no events and the `Ui` does not need updating, wait for the next event.
+        if events.is_empty() && !self.ui_needs_update {
+            events.extend(display.wait_events().next());
+        }
+
+        self.ui_needs_update = false;
+        self.last_update = std::time::Instant::now();
+
+        events
+    }
+
+    /// Notifies the event loop that the `Ui` requires another update whether or not there are any
+    /// pending events.
+    ///
+    /// This is primarily used on the occasion that some part of the `Ui` is still animating and
+    /// requires further updates to do so.
+    pub fn needs_update(&mut self) {
+        self.ui_needs_update = true;
+    }
 
 }

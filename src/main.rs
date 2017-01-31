@@ -30,8 +30,6 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
             .build_glium()
             .unwrap();
 
-        // A demonstration of some app state that we want to control with the conrod GUI.
-        let mut app = support::DemoApp::new();
 
         // Construct our `Ui`.
         let mut ui = conrod::UiBuilder::new([WIN_W as f64, WIN_H as f64]).theme(support::theme()).build();
@@ -57,6 +55,13 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
 
         //let image_map = support::image_map(&ids, load_rust_logo(&display));
 
+        let mut image_map = conrod::image::Map::new();
+        let rust_logo = image_map.insert(img2tex(&display, &imgs[0]));
+
+        // A demonstration of some app state that we want to control with the conrod GUI.
+        let mut app = support::DemoApp::new(rust_logo);
+
+
         // A type used for converting `conrod::render::Primitives` into `Command`s that can be used
         // for drawing to the glium `Surface`.
         //
@@ -74,15 +79,16 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
         // - Update the widgets via the `support::gui` fn.
         // - Poll the window for available events.
         // - Repeat.
+        let mut event_loop = support::EventLoop::new();
         'main: loop {
 
-            // Poll for events.
-            for event in display.poll_events() {
+            // Handle all events.
+            for event in event_loop.next(&display) {
 
-                // Use the `glutin` backend feature to convert the glutin event to a conrod one.
-                let window = display.get_window().unwrap();
-                if let Some(event) = conrod::backend::glutin::convert(event.clone(), window) {
+                // Use the `winit` backend feature to convert the winit event to a conrod one.
+                if let Some(event) = conrod::backend::winit::convert(event.clone(), &display) {
                     ui.handle_event(event);
+                    event_loop.needs_update();
                 }
 
                 match event {
@@ -90,32 +96,27 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
                     glium::glutin::Event::KeyboardInput(_, _, Some(glium::glutin::VirtualKeyCode::Escape)) |
                     glium::glutin::Event::Closed =>
                         break 'main,
-
                     _ => {},
                 }
             }
 
-            // We must manually track the window width and height as it is currently not possible to
-            // receive `Resize` events from glium on Mac OS any other way.
-            //
-            // TODO: Once the following PR lands, we should stop tracking size like this and use the
-            // `window_resize_callback`. https://github.com/tomaka/winit/pull/88
-            if let Some(win_rect) = ui.rect_of(ui.window) {
-                let (win_w, win_h) = (win_rect.w() as u32, win_rect.h() as u32);
-                let (w, h) = display.get_window().unwrap().get_inner_size_points().unwrap();
-                if w != win_w || h != win_h {
-                    let event = conrod::event::Input::Resize(w, h);
-                    ui.handle_event(event);
-                }
-            }
+            // Instantiate a GUI demonstrating every widget type provided by conrod.
+            support::gui(&mut ui.set_widgets(), &ids, &mut app);
 
-            // If some input event has been received, update the GUI.
-            if ui.global_input.events().next().is_some() {
-                // Instantiate a GUI demonstrating every widget type provided by conrod.
-                let mut ui = ui.set_widgets();
-                support::gui(&mut ui, &ids, &mut app);
+            // Draw the `Ui`.
+            if let Some(primitives) = ui.draw_if_changed() {
+                renderer.fill(&display, primitives, &image_map);
+                let mut target = display.draw();
+                target.clear_color(0.0, 0.0, 0.0, 1.0);
+                renderer.draw(&display, &mut target, &image_map).unwrap();
+                target.finish().unwrap();
             }
+        }
+    }
 
+
+
+/*
             // Load the Image to display this frame
             let image_map = support::image_map(&ids, img2tex(&display, &imgs[0]));
 
@@ -132,4 +133,5 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
             std::thread::sleep(std::time::Duration::from_millis(16));
         }
     }
+ */
 
