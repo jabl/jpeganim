@@ -16,6 +16,12 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
 //use support;
 //use std;
 
+struct AnimState {
+    speed: u32, // Time between successive frames in milliseconds
+    direction_forward: bool, // Should the animation go forwards or backwards
+    cur_image: usize, // Index of image currently shown
+}
+
     // The initial width and height in "points".
     const WIN_W: u32 = support::WIN_W;
     const WIN_H: u32 = support::WIN_H;
@@ -44,10 +50,17 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
 
         let imgs = imgloader::img_load(std::path::Path::new("."));
 
+        // The animation state
+        let mut anim_state = AnimState {
+            speed: 128,  // About 8 FPS
+            direction_forward: true,
+            cur_image: 0,
+        };
+
         // Convert an image to a texture, upload it to GPU
         fn img2tex(display: &glium::Display, rgba_image: &image::RgbaImage) -> glium::texture::Texture2d {
             let image_dimensions = rgba_image.dimensions();
-            let mut r = rgba_image.clone();
+            let r = rgba_image.clone();
             let raw_image = glium::texture::RawImage2d::from_raw_rgba_reversed(r.into_raw(), image_dimensions);
             let texture = glium::texture::Texture2d::new(display, raw_image).unwrap();
             texture
@@ -56,10 +69,11 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
         //let image_map = support::image_map(&ids, load_rust_logo(&display));
 
         let mut image_map = conrod::image::Map::new();
-        let rust_logo = image_map.insert(img2tex(&display, &imgs[0]));
+        let cur_image_id = image_map.insert(img2tex(&display, &imgs[anim_state.cur_image]));
+
 
         // A demonstration of some app state that we want to control with the conrod GUI.
-        let mut app = support::DemoApp::new(rust_logo);
+        let mut app = support::DemoApp::new(cur_image_id);
 
 
         // A type used for converting `conrod::render::Primitives` into `Command`s that can be used
@@ -72,6 +86,8 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
         // `conrod::render::Primitive`s.
         // - a `Vec` of commands that describe how to draw the vertices.
         let mut renderer = conrod::backend::glium::Renderer::new(&display).unwrap();
+
+        let mut nframe = 0;
 
         // Start the loop:
         //
@@ -111,6 +127,26 @@ use conrod::backend::glium::glium::{DisplayBuild, Surface};
                 renderer.draw(&display, &mut target, &image_map).unwrap();
                 target.finish().unwrap();
             }
+
+            // How many frames to we draw before we change image?
+            let frames_per_img = anim_state.speed / 16;
+            if nframe % frames_per_img == 0 {
+                if anim_state.direction_forward {
+                    anim_state.cur_image += 1;
+                }
+                else {
+                    if anim_state.cur_image == 0 {
+                        anim_state.cur_image = imgs.len() - 1;
+                    }
+                    else {
+                        anim_state.cur_image -= 1;
+                    }
+                }
+                anim_state.cur_image %= imgs.len();
+                //println!("cur_image {} of {}", anim_state.cur_image, imgs.len());
+                image_map.replace(cur_image_id, img2tex(&display, &imgs[anim_state.cur_image]));
+            }
+            nframe = (nframe + 1) % frames_per_img;
         }
     }
 

@@ -27,19 +27,19 @@ pub struct DemoApp {
     ball_xy: conrod::Point,
     ball_color: conrod::Color,
     sine_frequency: f32,
-    rust_logo: conrod::image::Id,
+    cur_image_id: conrod::image::Id,
 }
 
 
 impl DemoApp {
 
     /// Simple constructor for the `DemoApp`.
-    pub fn new(rust_logo: conrod::image::Id) -> Self {
+    pub fn new(image_id: conrod::image::Id) -> Self {
         DemoApp {
             ball_xy: [0.0, 0.0],
             ball_color: conrod::color::WHITE,
             sine_frequency: 1.0,
-            rust_logo: rust_logo,
+            cur_image_id: image_id,
         }
     }
 
@@ -98,7 +98,7 @@ widget_ids! {
 
         // Image.
         image_title,
-        rust_logo,
+        cur_image_id,
 
         // Button, XyPad, Toggle.
         button_title,
@@ -238,11 +238,11 @@ pub fn gui(ui: &mut conrod::UiCell, ids: &Ids, app: &mut DemoApp) {
         .set(ids.image_title, ui);
 
     const LOGO_SIDE: conrod::Scalar = 144.0;
-    widget::Image::new(app.rust_logo)
+    widget::Image::new(app.cur_image_id)
         .w_h(LOGO_SIDE, LOGO_SIDE)
         .down(60.0)
         .align_middle_x_of(ids.canvas)
-        .set(ids.rust_logo, ui);
+        .set(ids.cur_image_id, ui);
 
 
     /////////////////////////////////
@@ -251,7 +251,7 @@ pub fn gui(ui: &mut conrod::UiCell, ids: &Ids, app: &mut DemoApp) {
 
 
     widget::Text::new("Button, XYPad and Toggle")
-        .down_from(ids.rust_logo, 60.0)
+        .down_from(ids.cur_image_id, 60.0)
         .align_middle_x_of(ids.canvas)
         .font_size(SUBTITLE_SIZE)
         .set(ids.button_title, ui);
