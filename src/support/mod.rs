@@ -18,8 +18,8 @@ use conrod;
 use std;
 use conrod::backend::glium::glium;
 
-pub const WIN_W: u32 = 600;
-pub const WIN_H: u32 = 420;
+pub const WIN_W: u32 = 960;
+pub const WIN_H: u32 = 540;
 
 
 /// A demonstration of some application state we want to control with a conrod GUI.
@@ -237,7 +237,7 @@ pub fn gui(ui: &mut conrod::UiCell, ids: &Ids, app: &mut DemoApp) {
         .font_size(SUBTITLE_SIZE)
         .set(ids.image_title, ui);
 
-    const LOGO_SIDE: conrod::Scalar = 144.0;
+    const LOGO_SIDE: conrod::Scalar = 512.0;
     widget::Image::new(app.cur_image_id)
         .w_h(LOGO_SIDE, LOGO_SIDE)
         .down(60.0)
@@ -386,10 +386,13 @@ impl EventLoop {
         let mut events = Vec::new();
         events.extend(display.poll_events());
 
-        // If there are no events and the `Ui` does not need updating, wait for the next event.
-        if events.is_empty() && !self.ui_needs_update {
-            events.extend(display.wait_events().next());
-        }
+        // If there are no events and the `Ui` does not need updating,
+        // wait for the next event.  Must be commented for animations,
+        // as otherwise a lack of external events will make the
+        // animation stop.
+        //if events.is_empty() && !self.ui_needs_update {
+        //    events.extend(display.wait_events().next());
+        //}
 
         self.ui_needs_update = false;
         self.last_update = std::time::Instant::now();
