@@ -21,6 +21,9 @@ use conrod::backend::glium::glium;
 pub const WIN_W: u32 = 960;
 pub const WIN_H: u32 = 540;
 
+// Redraw the screen at most every UPDATE_INTERVAL milliseconds.
+// 32 <~> 30 fps
+pub const UPDATE_INTERVAL: u32 = 32;
 
 /// A demonstration of some application state we want to control with a conrod GUI.
 pub struct DemoApp {
@@ -373,13 +376,14 @@ impl EventLoop {
 
     /// Produce an iterator yielding all available events.
     pub fn next(&mut self, display: &glium::Display) -> Vec<glium::glutin::Event> {
-        // We don't want to loop any faster than 60 FPS, so wait until it has been at least 16ms
-        // since the last yield.
+        // We don't want to loop any faster than 30 FPS, so wait until
+        // it has been at least UPDATE_INTERVAL (32) ms since the last
+        // yield.
         let last_update = self.last_update;
-        let sixteen_ms = std::time::Duration::from_millis(16);
+        let update_ms = std::time::Duration::from_millis(UPDATE_INTERVAL as u64);
         let duration_since_last_update = std::time::Instant::now().duration_since(last_update);
-        if duration_since_last_update < sixteen_ms {
-            std::thread::sleep(sixteen_ms - duration_since_last_update);
+        if duration_since_last_update < update_ms {
+            std::thread::sleep(update_ms - duration_since_last_update);
         }
 
         // Collect all pending events.

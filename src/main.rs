@@ -129,7 +129,7 @@ struct AnimState {
             }
 
             // How many frames to we draw before we change image?
-            let frames_per_img = anim_state.speed / 16;
+            let frames_per_img = anim_state.speed / support::UPDATE_INTERVAL;
             if nframe % frames_per_img == 0 {
                 if anim_state.direction_forward {
                     anim_state.cur_image += 1;
@@ -145,29 +145,8 @@ struct AnimState {
                 anim_state.cur_image %= imgs.len();
                 //println!("cur_image {} of {}", anim_state.cur_image, imgs.len());
                 image_map.replace(cur_image_id, img2tex(&display, &imgs[anim_state.cur_image]));
+                ui.needs_redraw();
             }
             nframe = (nframe + 1) % frames_per_img;
         }
     }
-
-
-
-/*
-            // Load the Image to display this frame
-            let image_map = support::image_map(&ids, img2tex(&display, &imgs[0]));
-
-            // Draw the `Ui`.
-            if let Some(primitives) = ui.draw_if_changed() {
-                renderer.fill(&display, primitives, &image_map);
-                let mut target = display.draw();
-                target.clear_color(0.0, 0.0, 0.0, 1.0);
-                renderer.draw(&display, &mut target, &image_map).unwrap();
-                target.finish().unwrap();
-            }
-
-            // Avoid hogging the CPU.
-            std::thread::sleep(std::time::Duration::from_millis(16));
-        }
-    }
- */
-
