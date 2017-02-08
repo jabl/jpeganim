@@ -31,6 +31,7 @@ pub struct DemoApp {
     ball_color: conrod::Color,
     sine_frequency: f32,
     cur_image_id: conrod::image::Id,
+    pub image_label: String,
 }
 
 
@@ -43,6 +44,7 @@ impl DemoApp {
             ball_color: conrod::color::WHITE,
             sine_frequency: 1.0,
             cur_image_id: image_id,
+            image_label: "0.jpg".to_string()
         }
     }
 
@@ -234,7 +236,7 @@ pub fn gui(ui: &mut conrod::UiCell, ids: &Ids, app: &mut DemoApp) {
     /////////////////
 
 
-    widget::Text::new("Image")
+    widget::Text::new(&app.image_label)
         .down_from(ids.shapes_canvas, MARGIN)
         .align_middle_x_of(ids.canvas)
         .font_size(SUBTITLE_SIZE)

@@ -143,6 +143,7 @@ struct AnimState {
                     }
                 }
                 anim_state.cur_image %= imgs.len();
+                app.image_label = anim_state.cur_image.to_string() + ".jpg";
                 //println!("cur_image {} of {}", anim_state.cur_image, imgs.len());
                 image_map.replace(cur_image_id, img2tex(&display, &imgs[anim_state.cur_image]));
                 ui.needs_redraw();
