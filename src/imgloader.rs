@@ -15,7 +15,7 @@ pub fn img_load(dir: &Path) -> Vec<image::RgbaImage> {
             Ok(val) => val,
             Err(_) => break,
         };
-        v.push(img.to_rgba());
+        v.push(img.to_rgba8());
         id += 1;
     }
     v
