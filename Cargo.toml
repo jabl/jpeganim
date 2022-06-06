@@ -2,6 +2,7 @@
 name = "jpeganim"
 version = "0.1.0"
 authors = ["Janne Blomqvist <blomqvist.janne@gmail.com>"]
+edition = '2021'
 
 [dependencies]
 find_folder = "^0.3.0"
